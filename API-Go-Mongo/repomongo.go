@@ -26,7 +26,7 @@ func (repo *repo) CreateUser(ctx context.Context, user User) (string, error) {
 		fmt.Println("Error occured inside CreateUser in repo")
 		return "", err
 	} else {
-		msg := "User Created:" + user.Email
+		msg := "User Created: " + user.Email
 		fmt.Println(msg)
 		return msg, nil
 	}
@@ -57,7 +57,7 @@ func (repo *repo) DeleteUser(ctx context.Context, id int) (string, error) {
 
 func (repo *repo) UpdateUser(ctx context.Context, id int, user User) error {
 	coll := db.C(UserCollection)
-	err := coll.Update(bson.M{"userid": id}, bson.M{"$set": bson.M{"email": user.Email}})
+	err := coll.Update(bson.M{"userid": id}, bson.M{"$set": bson.M{"email": user.Email, "password": user.Password, "phone": user.Phone}})
 	if err != nil {
 		fmt.Println("Error occured inside update user repo")
 		return err

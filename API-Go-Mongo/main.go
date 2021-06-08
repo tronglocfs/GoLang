@@ -5,6 +5,7 @@ import (
 	"os"
 
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 		decodeCreateUserRequest,
 		encodeResponse,
 	)
-	GetByIdHandler := httptransport.NewServer(
+	GetUserByIdHandler := httptransport.NewServer(
 		makeGetUserByIdEndpoint(svc),
 		decodeGetUserByIdRequest,
 		encodeResponse,
@@ -42,9 +43,11 @@ func main() {
 		encodeResponse,
 	)
 
+	r := mux.NewRouter()
+	http.Handle("/", r)
 	http.Handle("/create", CreateUserHandler)
-	http.Handle("/user/1", GetByIdHandler)
-	http.Handle("/deleteuser/1", DeleteUserHandler)
-	http.Handle("/updateuser/", UpdateUserHandler)
-	http.ListenAndServe(":8000", nil)
+	r.Handle("/users/{id}", GetUserByIdHandler)
+	r.Handle("/deleteuser/{id}", DeleteUserHandler)
+	r.Handle("/updateuser", UpdateUserHandler)
+	http.ListenAndServe(":8080", nil)
 }

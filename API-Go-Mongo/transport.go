@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 
 	"github.com/go-kit/kit/endpoint"
 )
@@ -13,12 +16,12 @@ type createUserRequest struct {
 }
 
 type createUserResponse struct {
-	Data string `json:"data"`
-	Err  string `json:"err,omitempty"`
+	Msg string `json:"msg"`
+	Err string `json:"err,omitempty"`
 }
 
 type getUserByIdRequest struct {
-	Id int `json:"id"`
+	Id string `json:"id"`
 }
 
 type getUserByIdResponse struct {
@@ -27,16 +30,16 @@ type getUserByIdResponse struct {
 }
 
 type deleteUserRequest struct {
-	Id int `json:"id"`
+	Id string `json:"id"`
 }
 
 type deleteUserResponse struct {
-	Data string `json:"data"`
-	Err  string `json:"err,omitempty"`
+	Msg string `json:"msg"`
+	Err string `json:"err,omitempty"`
 }
 
 type updateUserRequest struct {
-	Id   int `json:"id"`
+	Id   string `json:"id"`
 	user User
 }
 
@@ -47,21 +50,28 @@ type updateUserResponse struct {
 func makeCreateUserEndpoint(svc UserService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createUserRequest)
-		data, err := svc.CreateUser(ctx, req.user)
+		msg, err := svc.CreateUser(ctx, req.user)
 
 		if err != nil {
 			return createUserResponse{"", err.Error()}, nil
 		}
 
-		return createUserResponse{data, ""}, nil
+		return createUserResponse{msg, ""}, nil
 
 	}
 }
 
 func makeGetUserByIdEndpoint(svc UserService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+
 		req := request.(getUserByIdRequest)
-		data, err := svc.GetUserById(ctx, req.Id)
+		id, er := strconv.Atoi(req.Id)
+
+		if er != nil {
+			return getUserByIdResponse{"", er.Error()}, nil
+		}
+
+		data, err := svc.GetUserById(ctx, id)
 
 		if err != nil {
 			return getUserByIdResponse{"", err.Error()}, nil
@@ -75,13 +85,19 @@ func makeGetUserByIdEndpoint(svc UserService) endpoint.Endpoint {
 func makeDeleteUserEndpoint(svc UserService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteUserRequest)
-		data, err := svc.DeleteUser(ctx, req.Id)
+		id, er := strconv.Atoi(req.Id)
+
+		if er != nil {
+			return deleteUserResponse{"", er.Error()}, nil
+		}
+
+		msg, err := svc.DeleteUser(ctx, id)
 
 		if err != nil {
 			return deleteUserResponse{"", err.Error()}, nil
 		}
 
-		return deleteUserResponse{data, ""}, nil
+		return deleteUserResponse{msg, ""}, nil
 
 	}
 }
@@ -110,8 +126,11 @@ func decodeCreateUserRequest(_ context.Context, r *http.Request) (interface{}, e
 
 func decodeGetUserByIdRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var request getUserByIdRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
+
+	vars := mux.Vars(r)
+
+	request = getUserByIdRequest{
+		Id: vars["id"],
 	}
 	return request, nil
 
@@ -119,9 +138,13 @@ func decodeGetUserByIdRequest(_ context.Context, r *http.Request) (interface{}, 
 
 func decodeDeleteUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var request deleteUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
+
+	vars := mux.Vars(r)
+
+	request = deleteUserRequest{
+		Id: vars["id"],
 	}
+
 	return request, nil
 }
 
