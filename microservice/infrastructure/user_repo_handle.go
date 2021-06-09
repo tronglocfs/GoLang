@@ -35,8 +35,8 @@ func (repo *repo) CreateUser(ctx context.Context, user model.User) (string, erro
 
 func (repo *repo) GetUserById(ctx context.Context, id int) (interface{}, error) {
 	coll := db.C(UserCollection)
-	data := []model.User{}
-	err := coll.Find(bson.M{"userid": id}).Select(bson.M{}).All(&data)
+	var data model.User
+	err := coll.Find(bson.M{"userid": id}).Select(bson.M{}).One(&data)
 
 	if err != nil {
 		fmt.Println("Error occurred inside GetUserById in repo")
