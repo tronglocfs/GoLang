@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-
 	"github.com/gofrs/uuid"
 	"microservice/domain/model"
 )

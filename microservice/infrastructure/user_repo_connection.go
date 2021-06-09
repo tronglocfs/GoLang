@@ -13,7 +13,7 @@ var db *mgo.Database
 func GetMongoDB() *mgo.Database {
 
 	host := "MONGO_HOST"
-	dbName := "Test"
+	dbName := "User_Test"
 	fmt.Println("Info DB:", host, dbName)
 	session, err := mgo.Dial("mongodb://localhost/test")
 	if err != nil {

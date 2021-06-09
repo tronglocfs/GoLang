@@ -6,7 +6,8 @@ import (
 
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	app "microservice/application"
+	endpoints "microservice/application/endpoints"
+	httpapp "microservice/application/transport/http"
 	"microservice/domain/service"
 	infra "microservice/infrastructure"
 )
@@ -25,32 +26,32 @@ func main() {
 	svc = service.NewService(repository)
 
 	CreateUserHandler := httptransport.NewServer(
-		app.MakeCreateUserEndpoint(svc),
-		app.DecodeCreateUserRequest,
-		app.EncodeResponse,
+		endpoints.MakeUserEndpoints(svc).MakeCreateUserEndpoint(),
+		httpapp.DecodeCreateUserRequest,
+		httpapp.EncodeResponse,
 	)
 	GetUserByIdHandler := httptransport.NewServer(
-		app.MakeGetUserByIdEndpoint(svc),
-		app.DecodeGetUserByIdRequest,
-		app.EncodeResponse,
+		endpoints.MakeUserEndpoints(svc).MakeGetUserByIdEndpoint(),
+		httpapp.DecodeGetUserByIdRequest,
+		httpapp.EncodeResponse,
 	)
 
 	DeleteUserHandler := httptransport.NewServer(
-		app.MakeDeleteUserEndpoint(svc),
-		app.DecodeDeleteUserRequest,
-		app.EncodeResponse,
+		endpoints.MakeUserEndpoints(svc).MakeDeleteUserEndpoint(),
+		httpapp.DecodeDeleteUserRequest,
+		httpapp.EncodeResponse,
 	)
 	UpdateUserHandler := httptransport.NewServer(
-		app.MakeUpdateUserEndpoint(svc),
-		app.DecodeUpdateUserRequest,
-		app.EncodeResponse,
+		endpoints.MakeUserEndpoints(svc).MakeUpdateUserEndpoint(),
+		httpapp.DecodeUpdateUserRequest,
+		httpapp.EncodeResponse,
 	)
 
 	r := mux.NewRouter()
 	http.Handle("/", r)
-	http.Handle("/create", CreateUserHandler)
-	r.Handle("/users/{id}", GetUserByIdHandler)
-	r.Handle("/deleteuser/{id}", DeleteUserHandler)
-	r.Handle("/updateuser", UpdateUserHandler)
+	r.Handle("/user-management/users", CreateUserHandler).Methods("POST") // POST
+	r.Handle("/user-management/users/{id}", GetUserByIdHandler).Methods("GET")
+	r.Handle("/user-management/users/{id}", DeleteUserHandler).Methods("DELETE")
+	r.Handle("/user-management/users", UpdateUserHandler).Methods("PUT")
 	http.ListenAndServe(":8080", nil)
 }
