@@ -66,7 +66,6 @@ func (s userService) DeleteUser(ctx context.Context, id int) (string, error) {
 }
 
 func (s userService) UpdateUser(ctx context.Context, id int, user model.User) error {
-
 	err := s.repository.UpdateUser(ctx, id, user)
 
 	if err != nil {

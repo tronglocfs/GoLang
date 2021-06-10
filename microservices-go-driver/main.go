@@ -6,7 +6,7 @@ import (
 
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	endpoints "microservice/application/endpoints"
+	"microservice/application/endpoints"
 	httpapp "microservice/application/transport/http"
 	"microservice/domain/service"
 	infra "microservice/infrastructure"

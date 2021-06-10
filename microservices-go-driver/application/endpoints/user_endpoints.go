@@ -14,6 +14,7 @@ type UserEndpoints interface {
 	MakeGetUserByIdEndpoint() endpoint.Endpoint
 	MakeDeleteUserEndpoint() endpoint.Endpoint
 	MakeUpdateUserEndpoint() endpoint.Endpoint
+	//UserValidation() (string, error)
 }
 
 // UserEndpoints Struct to instance endpoints
@@ -67,6 +68,10 @@ type UpdateUserResponse struct {
 func (s userEndpoints) MakeCreateUserEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateUserRequest)
+		err := UserValidation(req.User)
+		if err != nil {
+			 return CreateUserResponse{"", err.Error()}, nil
+		}
 		msg, err := s.userDomainService.CreateUser(ctx, req.User)
 
 		if err != nil {
@@ -122,7 +127,11 @@ func (s userEndpoints) MakeDeleteUserEndpoint() endpoint.Endpoint {
 func (s userEndpoints) MakeUpdateUserEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(UpdateUserRequest)
-		err := s.userDomainService.UpdateUser(ctx, req.User.Userid, req.User)
+		err := UserValidation(req.User)
+		if err != nil {
+			return UpdateUserResponse{err.Error()}, nil
+		}
+		err = s.userDomainService.UpdateUser(ctx, req.User.Userid, req.User)
 
 		if err != nil {
 			return UpdateUserResponse{err.Error()}, nil

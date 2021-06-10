@@ -26,11 +26,27 @@ func NewRepo(db *mongo.Client) (model.Repository, error) {
 }
 
 func (repo *repo) CreateUser(ctx context.Context, user model.User) (string, error) {
+
 	collection := repo.db.Database(dbName).Collection(UserCollection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err := collection.InsertOne(ctx, user)
+	count, err := collection.CountDocuments(ctx, bson.D{{"$or", bson.A{
+															bson.D{{"email", user.Email}},
+															bson.D{{"userid", user.Userid}}}}})
+
+	if err != nil {
+		fmt.Println("Creating user fails")
+		return "", err
+	}
+
+	if count > 0  {
+		msg := "Email or UserID existed"
+		fmt.Println("Email or UserID existed")
+		return msg, err
+	}
+
+	_, err = collection.InsertOne(ctx, user)
 	//id := res.InsertedID
 
 	if err != nil {
@@ -81,11 +97,28 @@ func (repo *repo) DeleteUser(ctx context.Context, id int) (string, error) {
 }
 
 func (repo *repo) UpdateUser(ctx context.Context, id int, user model.User) error {
+	var email model.User
 	collection := repo.db.Database(dbName).Collection(UserCollection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err := collection.UpdateOne(ctx, bson.M{"userid": id}, bson.M{"$set": bson.M{"email": user.Email, "password": user.Password, "phone": user.Phone}})
+
+	count, err := collection.CountDocuments(ctx, bson.D{{"email", user.Email}})
+
+	if err != nil {
+		fmt.Println("Update user fails")
+		return err
+	}
+
+	err = collection.FindOne(ctx, bson.D{{"email", user.Email}}).Decode(&email)
+
+	if count > 1 || (count == 1 && email.Email != user.Email)   {
+		err := errors.New("email existed")
+		fmt.Println("Email existed")
+		return err
+	}
+
+	_, err = collection.UpdateOne(ctx, bson.M{"userid": id}, bson.M{"$set": bson.M{"email": user.Email, "password": user.Password, "phone": user.Phone}})
 
 	if err != nil {
 		fmt.Println("Updating user fails")
