@@ -2,10 +2,11 @@ package endpoints
 
 import (
 	"context"
-	"github.com/go-kit/kit/endpoint"
 	"microservice/domain/model"
 	"microservice/domain/service"
 	"strconv"
+
+	"github.com/go-kit/kit/endpoint"
 )
 
 // UserEndpoints holds all Go kit endpoints for the User service.
@@ -43,8 +44,8 @@ type GetUserByIdRequest struct {
 }
 
 type GetUserByIdResponse struct {
-	Data interface{} `json:"data"`
-	Err  string      `json:"err,omitempty"`
+	Data model.User `json:"data"`
+	Err  string     `json:"err,omitempty"`
 }
 
 type DeleteUserRequest struct {
@@ -70,7 +71,7 @@ func (s userEndpoints) MakeCreateUserEndpoint() endpoint.Endpoint {
 		req := request.(CreateUserRequest)
 		err := UserValidation(req.User)
 		if err != nil {
-			 return CreateUserResponse{"", err.Error()}, nil
+			return CreateUserResponse{"", err.Error()}, nil
 		}
 		msg, err := s.userDomainService.CreateUser(ctx, req.User)
 
@@ -90,13 +91,13 @@ func (s userEndpoints) MakeGetUserByIdEndpoint() endpoint.Endpoint {
 		id, er := strconv.Atoi(req.Id)
 
 		if er != nil {
-			return GetUserByIdResponse{"", er.Error()}, nil
+			return GetUserByIdResponse{model.User{}, er.Error()}, nil
 		}
 
 		data, err := s.userDomainService.GetUserById(ctx, id)
 
 		if err != nil {
-			return GetUserByIdResponse{"", err.Error()}, nil
+			return GetUserByIdResponse{model.User{}, err.Error()}, nil
 		}
 
 		return GetUserByIdResponse{data, ""}, nil

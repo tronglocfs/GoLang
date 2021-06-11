@@ -10,9 +10,9 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"microservice/config"
 	"microservice/domain/model"
 	"microservice/domain/repository"
+	"microservice/utils"
 )
 
 type repo struct {
@@ -27,7 +27,12 @@ func NewRepo(db *mongo.Client) (repository.Repository, error) {
 
 func (repo *repo) CreateUser(ctx context.Context, user model.User) (string, error) {
 
-	collection := repo.db.Database(config.DbName).Collection(config.UserCollection)
+	config, err := utils.LoadConfig(".")
+	if err != nil {
+		return "", err
+	}
+
+	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -59,14 +64,20 @@ func (repo *repo) CreateUser(ctx context.Context, user model.User) (string, erro
 }
 
 func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
-	collection := repo.db.Database(config.DbName).Collection(config.UserCollection)
+
+	config, err := utils.LoadConfig(".")
+	if err != nil {
+		return model.User{}, err
+	}
+
+	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
 
 	var data model.User
 
 	filter := bson.D{{"userid", id}}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err := collection.FindOne(ctx, filter).Decode(&data)
+	err = collection.FindOne(ctx, filter).Decode(&data)
 	if err == mongo.ErrNoDocuments {
 		fmt.Println("User does not exist")
 		return data, err
@@ -76,7 +87,13 @@ func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
 }
 
 func (repo *repo) DeleteUser(ctx context.Context, id int) (string, error) {
-	collection := repo.db.Database(config.DbName).Collection(config.UserCollection)
+
+	config, err := utils.LoadConfig(".")
+	if err != nil {
+		return "", err
+	}
+
+	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -97,8 +114,13 @@ func (repo *repo) DeleteUser(ctx context.Context, id int) (string, error) {
 
 func (repo *repo) UpdateUser(ctx context.Context, id int, user model.User) error {
 	var email model.User
-	collection := repo.db.Database(config.DbName).Collection(config.UserCollection)
 
+	config, err := utils.LoadConfig(".")
+	if err != nil {
+		return err
+	}
+
+	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
