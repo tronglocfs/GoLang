@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"os"
 
-	httptransport "github.com/go-kit/kit/transport/http"
-	"github.com/gorilla/mux"
 	"microservice/application/endpoints"
 	httpapp "microservice/application/transport/http"
 	"microservice/domain/service"
 	infra "microservice/infrastructure"
+
+	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/gorilla/mux"
 )
 
 func main() {

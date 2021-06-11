@@ -10,7 +10,7 @@ import (
 
 type UserService interface {
 	CreateUser(ctx context.Context, user model.User) (string, error)
-	GetUserById(ctx context.Context, id int) (interface{}, error)
+	GetUserById(ctx context.Context, id int) (model.User, error)
 	DeleteUser(ctx context.Context, id int) (string, error)
 	UpdateUser(ctx context.Context, id int, user model.User) error
 }
@@ -45,12 +45,12 @@ func (s userService) CreateUser(ctx context.Context, user model.User) (string, e
 	return msg, nil
 }
 
-func (s userService) GetUserById(ctx context.Context, id int) (interface{}, error) {
-	var data interface{}
+func (s userService) GetUserById(ctx context.Context, id int) (model.User, error) {
+	var data model.User
 	data, err := s.repository.GetUserById(ctx, id)
 
 	if err != nil {
-		return "", err
+		return data, err
 	}
 
 	return data, nil
