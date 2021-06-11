@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
-	"github.com/gofrs/uuid"
 	"microservice/domain/model"
+	"microservice/domain/repository"
+
+	"github.com/gofrs/uuid"
 )
 
 type UserService interface {
@@ -14,10 +16,10 @@ type UserService interface {
 }
 
 type userService struct {
-	repository model.Repository
+	repository repository.Repository
 }
 
-func NewService(rep model.Repository) UserService {
+func NewService(rep repository.Repository) UserService {
 	return &userService{
 		repository: rep,
 	}

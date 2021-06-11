@@ -4,22 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"microservice/config"
 	"microservice/domain/model"
+	"microservice/domain/repository"
 )
-
-const UserCollection = "gotestuser"
-const dbName = "User_Test"
 
 type repo struct {
 	db *mongo.Client
 }
 
-func NewRepo(db *mongo.Client) (model.Repository, error) {
+func NewRepo(db *mongo.Client) (repository.Repository, error) {
 	return &repo{
 		db: db,
 	}, nil
@@ -27,27 +27,26 @@ func NewRepo(db *mongo.Client) (model.Repository, error) {
 
 func (repo *repo) CreateUser(ctx context.Context, user model.User) (string, error) {
 
-	collection := repo.db.Database(dbName).Collection(UserCollection)
+	collection := repo.db.Database(config.DbName).Collection(config.UserCollection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	count, err := collection.CountDocuments(ctx, bson.D{{"$or", bson.A{
-															bson.D{{"email", user.Email}},
-															bson.D{{"userid", user.Userid}}}}})
+		bson.D{{"email", user.Email}},
+		bson.D{{"userid", user.Userid}}}}})
 
 	if err != nil {
 		fmt.Println("Creating user fails")
 		return "", err
 	}
 
-	if count > 0  {
+	if count > 0 {
 		msg := "Email or UserID existed"
 		fmt.Println("Email or UserID existed")
 		return msg, err
 	}
 
 	_, err = collection.InsertOne(ctx, user)
-	//id := res.InsertedID
 
 	if err != nil {
 		fmt.Println("Creating user fails")
@@ -59,8 +58,8 @@ func (repo *repo) CreateUser(ctx context.Context, user model.User) (string, erro
 	}
 }
 
-func (repo *repo) GetUserById(ctx context.Context, id int) (interface{}, error) {
-	collection := repo.db.Database(dbName).Collection(UserCollection)
+func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
+	collection := repo.db.Database(config.DbName).Collection(config.UserCollection)
 
 	var data model.User
 
@@ -77,7 +76,7 @@ func (repo *repo) GetUserById(ctx context.Context, id int) (interface{}, error) 
 }
 
 func (repo *repo) DeleteUser(ctx context.Context, id int) (string, error) {
-	collection := repo.db.Database(dbName).Collection(UserCollection)
+	collection := repo.db.Database(config.DbName).Collection(config.UserCollection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -98,7 +97,7 @@ func (repo *repo) DeleteUser(ctx context.Context, id int) (string, error) {
 
 func (repo *repo) UpdateUser(ctx context.Context, id int, user model.User) error {
 	var email model.User
-	collection := repo.db.Database(dbName).Collection(UserCollection)
+	collection := repo.db.Database(config.DbName).Collection(config.UserCollection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -112,7 +111,7 @@ func (repo *repo) UpdateUser(ctx context.Context, id int, user model.User) error
 
 	err = collection.FindOne(ctx, bson.D{{"email", user.Email}}).Decode(&email)
 
-	if count > 1 || (count == 1 && email.Email != user.Email)   {
+	if count > 1 || (count == 1 && email.Email != user.Email) {
 		err := errors.New("email existed")
 		fmt.Println("Email existed")
 		return err
