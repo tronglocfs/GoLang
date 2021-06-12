@@ -2,17 +2,16 @@ package service
 
 import (
 	"context"
-	"microservice/domain/model"
-	"microservice/domain/repository"
 
-	"github.com/gofrs/uuid"
+	"github.com/microservices/domain/model"
+	"github.com/microservices/domain/repository"
 )
 
 type UserService interface {
-	CreateUser(ctx context.Context, user model.User) (string, error)
+	CreateUser(ctx context.Context, user *model.User) (string, error)
 	GetUserById(ctx context.Context, id int) (model.User, error)
 	DeleteUser(ctx context.Context, id int) (string, error)
-	UpdateUser(ctx context.Context, id int, user model.User) error
+	UpdateUser(ctx context.Context, id int, user *model.User) error
 }
 
 type userService struct {
@@ -25,19 +24,18 @@ func NewService(rep repository.Repository) UserService {
 	}
 }
 
-func (s userService) CreateUser(ctx context.Context, user model.User) (string, error) {
-	uuid, _ := uuid.NewV4()
+func (s userService) CreateUser(ctx context.Context, user *model.User) (string, error) {
+	/*uuid, _ := uuid.NewV4()
 	id := uuid.String()
-	user.Id = id
-	userDetails := model.User{
-		Id:       user.Id,
-		Userid:   user.Userid,
-		Email:    user.Email,
-		Password: user.Password,
-		Phone:    user.Phone,
-	}
+	user.Id = id*/
+	// userDetails := model.User{
+	// 	Userid:   user.Userid,
+	// 	Email:    user.Email,
+	// 	Password: user.Password,
+	// 	Phone:    user.Phone,
+	// }
 
-	msg, err := s.repository.CreateUser(ctx, userDetails)
+	msg, err := s.repository.CreateUser(ctx, user)
 
 	if err != nil {
 		return "", err
@@ -67,7 +65,7 @@ func (s userService) DeleteUser(ctx context.Context, id int) (string, error) {
 	return data, nil
 }
 
-func (s userService) UpdateUser(ctx context.Context, id int, user model.User) error {
+func (s userService) UpdateUser(ctx context.Context, id int, user *model.User) error {
 	err := s.repository.UpdateUser(ctx, id, user)
 
 	if err != nil {

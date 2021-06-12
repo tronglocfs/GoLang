@@ -3,9 +3,10 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"microservice/application/endpoints"
 	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/microservices/application/endpoints"
 )
 
 func DecodeCreateUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
@@ -47,5 +48,3 @@ func DecodeUpdateUserRequest(_ context.Context, r *http.Request) (interface{}, e
 	}
 	return request, nil
 }
-
-

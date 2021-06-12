@@ -1,13 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"os"
 
-	"microservice/application/endpoints"
-	httpapp "microservice/application/transport/http"
-	"microservice/domain/service"
-	infra "microservice/infrastructure"
+	"github.com/microservices/application/endpoints"
+	httpapp "github.com/microservices/application/transport/http"
+	"github.com/microservices/domain/service"
+	infra "github.com/microservices/infrastructure"
 
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -17,10 +19,16 @@ func main() {
 
 	var svc service.UserService
 
-	db := infra.GetMongoDB()
+	db, err := infra.GetMongoDB()
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
 
 	repository, err := infra.NewRepo(db)
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(-1)
 	}
 
@@ -29,23 +37,23 @@ func main() {
 	CreateUserHandler := httptransport.NewServer(
 		endpoints.MakeUserEndpoints(svc).MakeCreateUserEndpoint(),
 		httpapp.DecodeCreateUserRequest,
-		httpapp.EncodeResponse,
+		httpapp.EncodeCreateUserResponse,
 	)
 	GetUserByIdHandler := httptransport.NewServer(
 		endpoints.MakeUserEndpoints(svc).MakeGetUserByIdEndpoint(),
 		httpapp.DecodeGetUserByIdRequest,
-		httpapp.EncodeResponse,
+		httpapp.EncodeGetUserByIDResponse,
 	)
 
 	DeleteUserHandler := httptransport.NewServer(
 		endpoints.MakeUserEndpoints(svc).MakeDeleteUserEndpoint(),
 		httpapp.DecodeDeleteUserRequest,
-		httpapp.EncodeResponse,
+		httpapp.EncodeDeleteUserResponse,
 	)
 	UpdateUserHandler := httptransport.NewServer(
 		endpoints.MakeUserEndpoints(svc).MakeUpdateUserEndpoint(),
 		httpapp.DecodeUpdateUserRequest,
-		httpapp.EncodeResponse,
+		httpapp.EncodeUpdateUserResponse,
 	)
 
 	r := mux.NewRouter()
@@ -54,5 +62,5 @@ func main() {
 	r.Handle("/user-management/users/{id}", GetUserByIdHandler).Methods("GET")
 	r.Handle("/user-management/users/{id}", DeleteUserHandler).Methods("DELETE")
 	r.Handle("/user-management/users", UpdateUserHandler).Methods("PUT")
-	http.ListenAndServe(":8080", nil)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

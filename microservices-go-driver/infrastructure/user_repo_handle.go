@@ -10,9 +10,9 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"microservice/domain/model"
-	"microservice/domain/repository"
-	"microservice/utils"
+	"github.com/microservices/domain/model"
+	"github.com/microservices/domain/repository"
+	"github.com/microservices/utils"
 )
 
 type repo struct {
@@ -25,7 +25,7 @@ func NewRepo(db *mongo.Client) (repository.Repository, error) {
 	}, nil
 }
 
-func (repo *repo) CreateUser(ctx context.Context, user model.User) (string, error) {
+func (repo *repo) CreateUser(ctx context.Context, user *model.User) (string, error) {
 
 	config, err := utils.LoadConfig(".")
 	if err != nil {
@@ -34,7 +34,7 @@ func (repo *repo) CreateUser(ctx context.Context, user model.User) (string, erro
 
 	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	count, err := collection.CountDocuments(ctx, bson.D{{"$or", bson.A{
 		bson.D{{"email", user.Email}},
@@ -51,7 +51,7 @@ func (repo *repo) CreateUser(ctx context.Context, user model.User) (string, erro
 		return msg, err
 	}
 
-	_, err = collection.InsertOne(ctx, user)
+	_, err = collection.InsertOne(ctx, *user)
 
 	if err != nil {
 		fmt.Println("Creating user fails")
@@ -75,7 +75,7 @@ func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
 	var data model.User
 
 	filter := bson.D{{"userid", id}}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	err = collection.FindOne(ctx, filter).Decode(&data)
 	if err == mongo.ErrNoDocuments {
@@ -95,7 +95,7 @@ func (repo *repo) DeleteUser(ctx context.Context, id int) (string, error) {
 
 	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	res, err := collection.DeleteOne(ctx, bson.D{{"userid", id}})
 
@@ -112,7 +112,7 @@ func (repo *repo) DeleteUser(ctx context.Context, id int) (string, error) {
 	}
 }
 
-func (repo *repo) UpdateUser(ctx context.Context, id int, user model.User) error {
+func (repo *repo) UpdateUser(ctx context.Context, id int, user *model.User) error {
 	var email model.User
 
 	config, err := utils.LoadConfig(".")
@@ -121,7 +121,7 @@ func (repo *repo) UpdateUser(ctx context.Context, id int, user model.User) error
 	}
 
 	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	count, err := collection.CountDocuments(ctx, bson.D{{"email", user.Email}})
@@ -133,7 +133,7 @@ func (repo *repo) UpdateUser(ctx context.Context, id int, user model.User) error
 
 	err = collection.FindOne(ctx, bson.D{{"email", user.Email}}).Decode(&email)
 
-	if count > 1 || (count == 1 && email.Email != user.Email) {
+	if count > 1 || (count == 1 && user.Userid != email.Userid) {
 		err := errors.New("email existed")
 		fmt.Println("Email existed")
 		return err

@@ -2,9 +2,10 @@ package endpoints
 
 import (
 	"context"
-	"microservice/domain/model"
-	"microservice/domain/service"
 	"strconv"
+
+	"github.com/microservices/domain/model"
+	"github.com/microservices/domain/service"
 
 	"github.com/go-kit/kit/endpoint"
 )
@@ -15,7 +16,6 @@ type UserEndpoints interface {
 	MakeGetUserByIdEndpoint() endpoint.Endpoint
 	MakeDeleteUserEndpoint() endpoint.Endpoint
 	MakeUpdateUserEndpoint() endpoint.Endpoint
-	//UserValidation() (string, error)
 }
 
 // UserEndpoints Struct to instance endpoints
@@ -69,11 +69,11 @@ type UpdateUserResponse struct {
 func (s userEndpoints) MakeCreateUserEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateUserRequest)
-		err := UserValidation(req.User)
+		err := UserValidation(&req.User)
 		if err != nil {
 			return CreateUserResponse{"", err.Error()}, nil
 		}
-		msg, err := s.userDomainService.CreateUser(ctx, req.User)
+		msg, err := s.userDomainService.CreateUser(ctx, &req.User)
 
 		if err != nil {
 			return CreateUserResponse{"", err.Error()}, nil
@@ -128,11 +128,11 @@ func (s userEndpoints) MakeDeleteUserEndpoint() endpoint.Endpoint {
 func (s userEndpoints) MakeUpdateUserEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(UpdateUserRequest)
-		err := UserValidation(req.User)
+		err := UserValidation(&req.User)
 		if err != nil {
 			return UpdateUserResponse{err.Error()}, nil
 		}
-		err = s.userDomainService.UpdateUser(ctx, req.User.Userid, req.User)
+		err = s.userDomainService.UpdateUser(ctx, req.User.Userid, &req.User)
 
 		if err != nil {
 			return UpdateUserResponse{err.Error()}, nil
