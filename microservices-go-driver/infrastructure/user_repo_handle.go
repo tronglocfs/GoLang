@@ -15,6 +15,11 @@ import (
 	"github.com/microservices/utils"
 )
 
+var (
+	ErrAlreadyExists = errors.New("already exists")
+	ErrNotFound      = errors.New("not found")
+)
+
 type repo struct {
 	db *mongo.Client
 }
@@ -25,11 +30,11 @@ func NewRepo(db *mongo.Client) (repository.Repository, error) {
 	}, nil
 }
 
-func (repo *repo) CreateUser(ctx context.Context, user *model.User) (string, error) {
+func (repo *repo) CreateUser(ctx context.Context, user *model.User) error {
 
 	config, err := utils.LoadConfig(".")
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
@@ -38,29 +43,26 @@ func (repo *repo) CreateUser(ctx context.Context, user *model.User) (string, err
 	defer cancel()
 	count, err := collection.CountDocuments(ctx, bson.D{{"$or", bson.A{
 		bson.D{{"email", user.Email}},
-		bson.D{{"userid", user.Userid}}}}})
+		bson.D{{"_id", user.Userid}}}}})
 
 	if err != nil {
 		fmt.Println("Creating user fails")
-		return "", err
+		return err
 	}
 
 	if count > 0 {
-		msg := "Email or UserID existed"
 		fmt.Println("Email or UserID existed")
-		return msg, err
+		return ErrAlreadyExists
 	}
 
 	_, err = collection.InsertOne(ctx, *user)
 
 	if err != nil {
 		fmt.Println("Creating user fails")
-		return "", err
-	} else {
-		msg := "User Created: " + user.Email
-		fmt.Println(msg)
-		return msg, nil
+		return err
 	}
+
+	return nil
 }
 
 func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
@@ -74,45 +76,46 @@ func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
 
 	var data model.User
 
-	filter := bson.D{{"userid", id}}
+	filter := bson.D{{"_id", id}}
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	err = collection.FindOne(ctx, filter).Decode(&data)
 	if err == mongo.ErrNoDocuments {
 		fmt.Println("User does not exist")
-		return data, err
+		return data, ErrNotFound
 	}
 
 	return data, nil
 }
 
-func (repo *repo) DeleteUser(ctx context.Context, id int) (string, error) {
+func (repo *repo) DeleteUser(ctx context.Context, id int) error {
 
 	config, err := utils.LoadConfig(".")
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
 
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	res, err := collection.DeleteOne(ctx, bson.D{{"userid", id}})
+	res, err := collection.DeleteOne(ctx, bson.D{{"_id", id}})
 
 	if err != nil {
 		fmt.Println("Deleting user fails")
-		return "", err
-	} else if res.DeletedCount == 0 {
-		fmt.Println("Not found documents")
-		err = errors.New("no documents")
-		return "", err
-	} else {
-		msg := "User deleted successfully"
-		return msg, nil
+		return err
 	}
+
+	if res.DeletedCount == 0 {
+		fmt.Println("Not found documents")
+		return ErrNotFound
+	}
+
+	return nil
+
 }
 
-func (repo *repo) UpdateUser(ctx context.Context, id int, user *model.User) error {
+func (repo *repo) UpdateUser(ctx context.Context, user *model.User) error {
 	var email model.User
 
 	config, err := utils.LoadConfig(".")
@@ -124,7 +127,21 @@ func (repo *repo) UpdateUser(ctx context.Context, id int, user *model.User) erro
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	count, err := collection.CountDocuments(ctx, bson.D{{"email", user.Email}})
+	// check exist of id, if id doesn't exist => create
+	count, err := collection.CountDocuments(ctx, bson.D{{"_id", user.Userid}})
+
+	if count == 0 {
+		_, err = collection.InsertOne(ctx, *user)
+
+		if err != nil {
+			fmt.Println("Create user (because id does not exist) fails")
+			return err
+		}
+
+		return nil
+	}
+
+	count, err = collection.CountDocuments(ctx, bson.D{{"email", user.Email}})
 
 	if err != nil {
 		fmt.Println("Update user fails")
@@ -139,13 +156,11 @@ func (repo *repo) UpdateUser(ctx context.Context, id int, user *model.User) erro
 		return err
 	}
 
-	_, err = collection.UpdateOne(ctx, bson.M{"userid": id}, bson.M{"$set": bson.M{"email": user.Email, "password": user.Password, "phone": user.Phone}})
+	_, err = collection.UpdateOne(ctx, bson.M{"_id": user.Userid}, bson.M{"$set": bson.M{"email": user.Email, "password": user.Password, "phone": user.Phone}})
 
 	if err != nil {
 		fmt.Println("Updating user fails")
-		return err
-	} else {
-		return nil
+		return ErrNotFound
 	}
-
+	return nil
 }

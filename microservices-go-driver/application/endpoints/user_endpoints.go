@@ -5,12 +5,12 @@ import (
 	"strconv"
 
 	"github.com/microservices/domain/model"
-	"github.com/microservices/domain/service"
+	repo "github.com/microservices/domain/repository"
 
 	"github.com/go-kit/kit/endpoint"
 )
 
-// UserEndpoints holds all Go kit endpoints for the User service.
+// UserEndpoints holds all Go kit endpoints for the Repo
 type UserEndpoints interface {
 	MakeCreateUserEndpoint() endpoint.Endpoint
 	MakeGetUserByIdEndpoint() endpoint.Endpoint
@@ -20,13 +20,13 @@ type UserEndpoints interface {
 
 // UserEndpoints Struct to instance endpoints
 type userEndpoints struct {
-	userDomainService service.UserService
+	repoDomainService repo.Repository
 }
 
-// MakeUserEndpoints initializes all Go kit endpoints for the User service.
-func MakeUserEndpoints(s service.UserService) UserEndpoints {
+// MakeUserEndpoints initializes all Go kit endpoints for the Repo
+func MakeUserEndpoints(repo repo.Repository) UserEndpoints {
 	return &userEndpoints{
-		userDomainService: s,
+		repoDomainService: repo,
 	}
 }
 
@@ -35,7 +35,6 @@ type CreateUserRequest struct {
 }
 
 type CreateUserResponse struct {
-	Msg string `json:"msg"`
 	Err string `json:"err,omitempty"`
 }
 
@@ -53,12 +52,10 @@ type DeleteUserRequest struct {
 }
 
 type DeleteUserResponse struct {
-	Msg string `json:"msg"`
 	Err string `json:"err,omitempty"`
 }
 
 type UpdateUserRequest struct {
-	Id   string `json:"id"`
 	User model.User
 }
 
@@ -71,15 +68,15 @@ func (s userEndpoints) MakeCreateUserEndpoint() endpoint.Endpoint {
 		req := request.(CreateUserRequest)
 		err := UserValidation(&req.User)
 		if err != nil {
-			return CreateUserResponse{"", err.Error()}, nil
+			return CreateUserResponse{err.Error()}, err
 		}
-		msg, err := s.userDomainService.CreateUser(ctx, &req.User)
+		err = s.repoDomainService.CreateUser(ctx, &req.User)
 
 		if err != nil {
-			return CreateUserResponse{"", err.Error()}, nil
+			return CreateUserResponse{err.Error()}, err
 		}
 
-		return CreateUserResponse{msg, ""}, nil
+		return CreateUserResponse{""}, nil
 
 	}
 }
@@ -91,13 +88,13 @@ func (s userEndpoints) MakeGetUserByIdEndpoint() endpoint.Endpoint {
 		id, er := strconv.Atoi(req.Id)
 
 		if er != nil {
-			return GetUserByIdResponse{model.User{}, er.Error()}, nil
+			return GetUserByIdResponse{model.User{}, er.Error()}, er
 		}
 
-		data, err := s.userDomainService.GetUserById(ctx, id)
-
+		data, err := s.repoDomainService.GetUserById(ctx, id)
+		//fmt.Println(data)
 		if err != nil {
-			return GetUserByIdResponse{model.User{}, err.Error()}, nil
+			return data, err
 		}
 
 		return GetUserByIdResponse{data, ""}, nil
@@ -108,19 +105,19 @@ func (s userEndpoints) MakeGetUserByIdEndpoint() endpoint.Endpoint {
 func (s userEndpoints) MakeDeleteUserEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DeleteUserRequest)
-		id, er := strconv.Atoi(req.Id)
-
-		if er != nil {
-			return DeleteUserResponse{"", er.Error()}, nil
-		}
-
-		msg, err := s.userDomainService.DeleteUser(ctx, id)
+		id, err := strconv.Atoi(req.Id)
 
 		if err != nil {
-			return DeleteUserResponse{"", err.Error()}, nil
+			return DeleteUserResponse{err.Error()}, err
 		}
 
-		return DeleteUserResponse{msg, ""}, nil
+		err = s.repoDomainService.DeleteUser(ctx, id)
+
+		if err != nil {
+			return DeleteUserResponse{err.Error()}, err
+		}
+
+		return DeleteUserResponse{""}, nil
 
 	}
 }
@@ -130,12 +127,12 @@ func (s userEndpoints) MakeUpdateUserEndpoint() endpoint.Endpoint {
 		req := request.(UpdateUserRequest)
 		err := UserValidation(&req.User)
 		if err != nil {
-			return UpdateUserResponse{err.Error()}, nil
+			return UpdateUserResponse{err.Error()}, err
 		}
-		err = s.userDomainService.UpdateUser(ctx, req.User.Userid, &req.User)
 
+		err = s.repoDomainService.UpdateUser(ctx, &req.User)
 		if err != nil {
-			return UpdateUserResponse{err.Error()}, nil
+			return UpdateUserResponse{err.Error()}, err
 		}
 
 		return UpdateUserResponse{""}, nil

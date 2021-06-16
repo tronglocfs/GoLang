@@ -3,140 +3,43 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 
-	"github.com/microservices/application/endpoints"
+	infra "github.com/microservices/infrastructure"
 )
 
-func EncodeCreateUserResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	v, err := json.Marshal(&response)
+type errorer interface {
+	error() error
+}
 
-	if err != nil {
-		EncodeErrorInternal(ctx, err, w)
+func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	e, ok := response.(errorer)
+	if ok && e.error() != nil {
+		encodeError(ctx, e.error(), w)
 		return nil
 	}
-
-	var res endpoints.CreateUserResponse
-
-	err = json.Unmarshal(v, &res)
-
-	if err != nil {
-		EncodeErrorInternal(ctx, err, w)
-		return nil
-	}
-
-	if res.Err != "" {
-		EncodeErrorBadRequest(ctx, errors.New(res.Err), w)
-		return nil
-	}
-
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Methods", "*")
 	return json.NewEncoder(w).Encode(response)
 }
 
-func EncodeGetUserByIDResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	v, err := json.Marshal(&response)
-
-	if err != nil {
-		EncodeErrorInternal(ctx, err, w)
-		return nil
+func encodeError(_ context.Context, err error, w http.ResponseWriter) {
+	if err == nil {
+		panic("encodeError with nil error")
 	}
-
-	var res endpoints.GetUserByIdResponse
-
-	err = json.Unmarshal(v, &res)
-
-	if err != nil {
-		EncodeErrorInternal(ctx, err, w)
-		return nil
-	}
-
-	if res.Err != "" {
-		EncodeErrorNotFound(ctx, errors.New(res.Err), w)
-		return nil
-	}
-
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Methods", "*")
-	return json.NewEncoder(w).Encode(response)
-}
-
-func EncodeDeleteUserResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	v, err := json.Marshal(&response)
-
-	if err != nil {
-		EncodeErrorInternal(ctx, err, w)
-		return nil
-	}
-
-	var res endpoints.DeleteUserResponse
-
-	err = json.Unmarshal(v, &res)
-
-	if err != nil {
-		EncodeErrorInternal(ctx, err, w)
-		return nil
-	}
-
-	if res.Err != "" {
-		EncodeErrorNotFound(ctx, errors.New(res.Err), w)
-		return nil
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Methods", "*")
-	return json.NewEncoder(w).Encode(response)
-}
-
-func EncodeUpdateUserResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	v, err := json.Marshal(&response)
-
-	if err != nil {
-		EncodeErrorInternal(ctx, err, w)
-		return nil
-	}
-
-	var res endpoints.UpdateUserResponse
-
-	err = json.Unmarshal(v, &res)
-
-	if err != nil {
-		EncodeErrorInternal(ctx, err, w)
-		return nil
-	}
-
-	if res.Err != "" {
-		EncodeErrorBadRequest(ctx, errors.New(res.Err), w)
-		return nil
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Methods", "*")
-	return json.NewEncoder(w).Encode(response)
-}
-
-func EncodeErrorNotFound(_ context.Context, err error, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusNotFound)
+	w.WriteHeader(codeFrom(err))
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"err": err.Error(),
+		"error": err.Error(),
 	})
 }
 
-func EncodeErrorBadRequest(_ context.Context, err error, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"err": err.Error(),
-	})
-}
-
-func EncodeErrorInternal(_ context.Context, err error, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusInternalServerError)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"err": err.Error(),
-	})
+func codeFrom(err error) int {
+	switch err {
+	case infra.ErrNotFound:
+		return http.StatusNotFound
+	case infra.ErrAlreadyExists:
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
+	}
 }
