@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/microservices/application/service"
 	transport "github.com/microservices/application/transport/http"
 	infra "github.com/microservices/infrastructure"
 )
@@ -27,9 +28,9 @@ func main() {
 		os.Exit(-1)
 	}
 
-	//svc = service.NewService()
+	svc := service.NewUserService(repository)
 
-	h := transport.MakeHTTPHandler(repository)
+	h := transport.MakeHTTPHandler(svc)
 
 	log.Fatal(http.ListenAndServe(":8080", h))
 }

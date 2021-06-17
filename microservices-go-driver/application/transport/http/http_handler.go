@@ -6,12 +6,12 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/microservices/application/endpoints"
-	"github.com/microservices/domain/repository"
+	"github.com/microservices/application/service"
 )
 
-func MakeHTTPHandler(repo repository.Repository) http.Handler {
+func MakeHTTPHandler(service service.UserService) http.Handler {
 	r := mux.NewRouter()
-	e := endpoints.MakeUserEndpoints(repo)
+	e := endpoints.MakeUserEndpoints(service)
 	options := []httptransport.ServerOption{
 		httptransport.ServerErrorEncoder(encodeError),
 	}

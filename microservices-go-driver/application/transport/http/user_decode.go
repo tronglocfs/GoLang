@@ -6,11 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/microservices/application/endpoints"
+	"github.com/microservices/application/service"
 )
 
 func DecodeCreateUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var request endpoints.CreateUserRequest
+	var request service.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&request.User); err != nil {
 		return nil, err
 	}
@@ -18,11 +18,11 @@ func DecodeCreateUserRequest(_ context.Context, r *http.Request) (interface{}, e
 }
 
 func DecodeGetUserByIdRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var request endpoints.GetUserByIdRequest
+	var request service.GetUserByIdRequest
 
 	vars := mux.Vars(r)
 
-	request = endpoints.GetUserByIdRequest{
+	request = service.GetUserByIdRequest{
 		Id: vars["id"],
 	}
 	return request, nil
@@ -30,11 +30,11 @@ func DecodeGetUserByIdRequest(_ context.Context, r *http.Request) (interface{}, 
 }
 
 func DecodeDeleteUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var request endpoints.DeleteUserRequest
+	var request service.DeleteUserRequest
 
 	vars := mux.Vars(r)
 
-	request = endpoints.DeleteUserRequest{
+	request = service.DeleteUserRequest{
 		Id: vars["id"],
 	}
 
@@ -42,7 +42,7 @@ func DecodeDeleteUserRequest(_ context.Context, r *http.Request) (interface{}, e
 }
 
 func DecodeUpdateUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var request endpoints.UpdateUserRequest
+	var request service.UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&request.User); err != nil {
 		return nil, err
 	}

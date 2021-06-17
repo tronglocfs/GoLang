@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -41,9 +42,9 @@ func (repo *repo) CreateUser(ctx context.Context, user *model.User) error {
 
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	count, err := collection.CountDocuments(ctx, bson.D{{"$or", bson.A{
-		bson.D{{"email", user.Email}},
-		bson.D{{"_id", user.Userid}}}}})
+	count, err := collection.CountDocuments(ctx, bson.D{primitive.E{Key: "$or", Value: bson.A{
+		bson.D{primitive.E{Key: "email", Value: user.Email}},
+		bson.D{primitive.E{Key: "_id", Value: user.Userid}}}}})
 
 	if err != nil {
 		fmt.Println("Creating user fails")
@@ -76,7 +77,7 @@ func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
 
 	var data model.User
 
-	filter := bson.D{{"_id", id}}
+	filter := bson.D{primitive.E{Key: "_id", Value: id}}
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	err = collection.FindOne(ctx, filter).Decode(&data)
@@ -99,7 +100,7 @@ func (repo *repo) DeleteUser(ctx context.Context, id int) error {
 
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	res, err := collection.DeleteOne(ctx, bson.D{{"_id", id}})
+	res, err := collection.DeleteOne(ctx, bson.D{primitive.E{Key: "_id", Value: id}})
 
 	if err != nil {
 		fmt.Println("Deleting user fails")
@@ -128,8 +129,11 @@ func (repo *repo) UpdateUser(ctx context.Context, user *model.User) error {
 	defer cancel()
 
 	// check exist of id, if id doesn't exist => create
-	count, err := collection.CountDocuments(ctx, bson.D{{"_id", user.Userid}})
+	count, err := collection.CountDocuments(ctx, bson.D{primitive.E{Key: "_id", Value: user.Userid}})
 
+	if err != nil {
+		return err
+	}
 	if count == 0 {
 		_, err = collection.InsertOne(ctx, *user)
 
@@ -141,15 +145,18 @@ func (repo *repo) UpdateUser(ctx context.Context, user *model.User) error {
 		return nil
 	}
 
-	count, err = collection.CountDocuments(ctx, bson.D{{"email", user.Email}})
+	count, err = collection.CountDocuments(ctx, bson.D{primitive.E{Key: "email", Value: user.Email}})
 
 	if err != nil {
 		fmt.Println("Update user fails")
 		return err
 	}
 
-	err = collection.FindOne(ctx, bson.D{{"email", user.Email}}).Decode(&email)
+	err = collection.FindOne(ctx, bson.D{primitive.E{Key: "email", Value: user.Email}}).Decode(&email)
 
+	if err != nil {
+		return err
+	}
 	if count > 1 || (count == 1 && user.Userid != email.Userid) {
 		err := errors.New("email existed")
 		fmt.Println("Email existed")
