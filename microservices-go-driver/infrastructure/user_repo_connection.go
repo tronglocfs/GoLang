@@ -11,9 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func GetMongoDB() (*mongo.Client, error) {
+const coefTimeout time.Duration = 10
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func GetMongoDB() (*mongo.Client, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), coefTimeout*time.Second)
 	defer cancel()
 	config, err := utils.LoadConfig(".")
 	if err != nil {
@@ -26,7 +27,7 @@ func GetMongoDB() (*mongo.Client, error) {
 		return nil, err
 	}
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), coefTimeout*time.Second)
 	defer cancel()
 	err = client.Ping(ctx, nil)
 

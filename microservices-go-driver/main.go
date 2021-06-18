@@ -12,9 +12,6 @@ import (
 )
 
 func main() {
-
-	//var svc service.UserService
-
 	db, err := infra.GetMongoDB()
 
 	if err != nil {

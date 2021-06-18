@@ -10,7 +10,7 @@ import (
 
 type UserService interface {
 	CreateUserService(context.Context, interface{}) (interface{}, error)
-	GetUserByIdService(context.Context, interface{}) (interface{}, error)
+	GetUserByIDService(context.Context, interface{}) (interface{}, error)
 	DeleteUserService(context.Context, interface{}) (interface{}, error)
 	UpdateUserService(context.Context, interface{}) (interface{}, error)
 }
@@ -19,14 +19,13 @@ type userService struct {
 	repoService repo.Repository
 }
 
-func NewUserService(repo repo.Repository) UserService {
+func NewUserService(r repo.Repository) UserService {
 	return &userService{
-		repoService: repo,
+		repoService: r,
 	}
 }
 
 func (s userService) CreateUserService(ctx context.Context, request interface{}) (interface{}, error) {
-
 	req := request.(CreateUserRequest)
 	err := UserValidation(&req.User)
 
@@ -43,27 +42,27 @@ func (s userService) CreateUserService(ctx context.Context, request interface{})
 	return CreateUserResponse{""}, nil
 }
 
-func (s userService) GetUserByIdService(ctx context.Context, request interface{}) (interface{}, error) {
-	req := request.(GetUserByIdRequest)
+func (s userService) GetUserByIDService(ctx context.Context, request interface{}) (interface{}, error) {
+	req := request.(GetUserByIDRequest)
 
-	id, err := strconv.Atoi(req.Id)
-
-	if err != nil {
-		return GetUserByIdResponse{model.User{}, err.Error()}, err
-	}
-
-	data, err := s.repoService.GetUserById(ctx, id)
+	id, err := strconv.Atoi(req.ID)
 
 	if err != nil {
-		return GetUserByIdResponse{model.User{}, err.Error()}, err
+		return GetUserByIDResponse{model.User{}, err.Error()}, err
 	}
 
-	return GetUserByIdResponse{data, ""}, nil
+	data, err := s.repoService.GetUserByID(ctx, id)
+
+	if err != nil {
+		return GetUserByIDResponse{model.User{}, err.Error()}, err
+	}
+
+	return GetUserByIDResponse{data, ""}, nil
 }
 
 func (s userService) DeleteUserService(ctx context.Context, request interface{}) (interface{}, error) {
 	req := request.(DeleteUserRequest)
-	id, err := strconv.Atoi(req.Id)
+	id, err := strconv.Atoi(req.ID)
 
 	if err != nil {
 		return DeleteUserResponse{err.Error()}, err
@@ -98,17 +97,17 @@ type CreateUserResponse struct {
 	Err string `json:"err,omitempty"`
 }
 
-type GetUserByIdRequest struct {
-	Id string `json:"id"`
+type GetUserByIDRequest struct {
+	ID string `json:"id"`
 }
 
-type GetUserByIdResponse struct {
+type GetUserByIDResponse struct {
 	Data model.User `json:"data"`
 	Err  string     `json:"err,omitempty"`
 }
 
 type DeleteUserRequest struct {
-	Id string `json:"id"`
+	ID string `json:"id"`
 }
 
 type DeleteUserResponse struct {

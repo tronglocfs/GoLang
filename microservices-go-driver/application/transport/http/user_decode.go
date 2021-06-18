@@ -17,16 +17,15 @@ func DecodeCreateUserRequest(_ context.Context, r *http.Request) (interface{}, e
 	return request, nil
 }
 
-func DecodeGetUserByIdRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var request service.GetUserByIdRequest
+func DecodeGetUserByIDRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var request service.GetUserByIDRequest
 
 	vars := mux.Vars(r)
 
-	request = service.GetUserByIdRequest{
-		Id: vars["id"],
+	request = service.GetUserByIDRequest{
+		ID: vars["id"],
 	}
 	return request, nil
-
 }
 
 func DecodeDeleteUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
@@ -35,7 +34,7 @@ func DecodeDeleteUserRequest(_ context.Context, r *http.Request) (interface{}, e
 	vars := mux.Vars(r)
 
 	request = service.DeleteUserRequest{
-		Id: vars["id"],
+		ID: vars["id"],
 	}
 
 	return request, nil

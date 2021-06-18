@@ -9,9 +9,9 @@ import (
 	"github.com/microservices/application/service"
 )
 
-func MakeHTTPHandler(service service.UserService) http.Handler {
+func MakeHTTPHandler(svc service.UserService) http.Handler {
 	r := mux.NewRouter()
-	e := endpoints.MakeUserEndpoints(service)
+	e := endpoints.MakeUserEndpoints(svc)
 	options := []httptransport.ServerOption{
 		httptransport.ServerErrorEncoder(encodeError),
 	}
@@ -23,8 +23,8 @@ func MakeHTTPHandler(service service.UserService) http.Handler {
 		options...,
 	))
 	r.Methods("GET").Path("/user-management/users/{id}").Handler(httptransport.NewServer(
-		e.MakeGetUserByIdEndpoint(),
-		DecodeGetUserByIdRequest,
+		e.MakeGetUserByIDEndpoint(),
+		DecodeGetUserByIDRequest,
 		encodeResponse,
 		options...,
 	))

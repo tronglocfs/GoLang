@@ -32,7 +32,6 @@ func NewRepo(db *mongo.Client) (repository.Repository, error) {
 }
 
 func (repo *repo) CreateUser(ctx context.Context, user *model.User) error {
-
 	config, err := utils.LoadConfig(".")
 	if err != nil {
 		return err
@@ -40,7 +39,7 @@ func (repo *repo) CreateUser(ctx context.Context, user *model.User) error {
 
 	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
 
-	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), coefTimeout*time.Second)
 	defer cancel()
 	count, err := collection.CountDocuments(ctx, bson.D{primitive.E{Key: "$or", Value: bson.A{
 		bson.D{primitive.E{Key: "email", Value: user.Email}},
@@ -66,8 +65,7 @@ func (repo *repo) CreateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
-
+func (repo *repo) GetUserByID(ctx context.Context, id int) (model.User, error) {
 	config, err := utils.LoadConfig(".")
 	if err != nil {
 		return model.User{}, err
@@ -78,7 +76,7 @@ func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
 	var data model.User
 
 	filter := bson.D{primitive.E{Key: "_id", Value: id}}
-	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), coefTimeout*time.Second)
 	defer cancel()
 	err = collection.FindOne(ctx, filter).Decode(&data)
 	if err == mongo.ErrNoDocuments {
@@ -90,7 +88,6 @@ func (repo *repo) GetUserById(ctx context.Context, id int) (model.User, error) {
 }
 
 func (repo *repo) DeleteUser(ctx context.Context, id int) error {
-
 	config, err := utils.LoadConfig(".")
 	if err != nil {
 		return err
@@ -98,7 +95,7 @@ func (repo *repo) DeleteUser(ctx context.Context, id int) error {
 
 	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
 
-	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), coefTimeout*time.Second)
 	defer cancel()
 	res, err := collection.DeleteOne(ctx, bson.D{primitive.E{Key: "_id", Value: id}})
 
@@ -113,7 +110,6 @@ func (repo *repo) DeleteUser(ctx context.Context, id int) error {
 	}
 
 	return nil
-
 }
 
 func (repo *repo) UpdateUser(ctx context.Context, user *model.User) error {
@@ -125,7 +121,7 @@ func (repo *repo) UpdateUser(ctx context.Context, user *model.User) error {
 	}
 
 	collection := repo.db.Database(config.DBName).Collection(config.DBCollection)
-	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), coefTimeout*time.Second)
 	defer cancel()
 
 	// check exist of id, if id doesn't exist => create
@@ -158,12 +154,13 @@ func (repo *repo) UpdateUser(ctx context.Context, user *model.User) error {
 		return err
 	}
 	if count > 1 || (count == 1 && user.Userid != email.Userid) {
-		err := errors.New("email existed")
+		err = errors.New("email existed")
 		fmt.Println("Email existed")
 		return err
 	}
 
-	_, err = collection.UpdateOne(ctx, bson.M{"_id": user.Userid}, bson.M{"$set": bson.M{"email": user.Email, "password": user.Password, "phone": user.Phone}})
+	_, err = collection.UpdateOne(ctx, bson.M{"_id": user.Userid},
+		bson.M{"$set": bson.M{"email": user.Email, "password": user.Password, "phone": user.Phone}})
 
 	if err != nil {
 		fmt.Println("Updating user fails")

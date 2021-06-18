@@ -11,7 +11,7 @@ import (
 // UserEndpoints holds all Go kit endpoints for the Repo
 type UserEndpoints interface {
 	MakeCreateUserEndpoint() endpoint.Endpoint
-	MakeGetUserByIdEndpoint() endpoint.Endpoint
+	MakeGetUserByIDEndpoint() endpoint.Endpoint
 	MakeDeleteUserEndpoint() endpoint.Endpoint
 	MakeUpdateUserEndpoint() endpoint.Endpoint
 }
@@ -34,16 +34,15 @@ func (s userEndpoints) MakeCreateUserEndpoint() endpoint.Endpoint {
 	}
 }
 
-func (s userEndpoints) MakeGetUserByIdEndpoint() endpoint.Endpoint {
+func (s userEndpoints) MakeGetUserByIDEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return s.service.GetUserByIdService(ctx, request)
+		return s.service.GetUserByIDService(ctx, request)
 	}
 }
 
 func (s userEndpoints) MakeDeleteUserEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return s.service.DeleteUserService(ctx, request)
-
 	}
 }
 
